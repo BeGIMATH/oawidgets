@@ -30,9 +30,9 @@ def scene2mesh(scene, property=None):
     """Return a mesh from a scene"""
     d = Tesselator()
     indices, vertices, colors, attribute=[], [], [], []
-    colordict={}
-    count=-1
-    offset=0
+    colordict = {}
+    count = -1
+    offset = 0
     for obj in scene:
         obj.geometry.apply(d)
 
@@ -53,23 +53,29 @@ def scene2mesh(scene, property=None):
         attribute.extend([colordict[color]]*len(pts))
         indices.extend(idl.tolist())
 
-    colors=np.array(colordict.keys()) / 255.
+    colors = np.array(colordict.keys()) / 255.
     if property is not None:
         property = np.repeat(np.array(property), [3]*len(property))
-        mesh = k3d.mesh(vertices=vertices, indices=indices, attribute=property, color_map=k3d.basic_color_maps.Jet, color_range=[min(property), max(property)])
+        mesh = k3d.mesh(vertices=vertices, indices=indices, attribute=property,
+                        color_map=k3d.basic_color_maps.Jet,
+                        color_range=[min(property), max(property)])
     elif len(colors) == 1:
         colorhex = int(matplotlib.colors.rgb2hex(colors[0])[1:], 16)
         mesh = k3d.mesh(vertices=vertices, indices=indices)
         mesh.color=colorhex
     else:
-        color_map = zip(list(np.array(colordict.values()) /
-                             float(max(colordict.values()))),
-                        colors[:,0],
-                        colors[:,1],
-                        colors[:,2])
-        color_map.sort()
-        #color_map=k3d.basic_color_maps.Jet
-        attribute = list(np.array(attribute)/float(max(attribute)))
+        if colordict:
+            color_map = zip(list(np.array(colordict.values()) /
+                                 float(max(colordict.values()))),
+                            colors[:,0],
+                            colors[:,1],
+                            colors[:,2])
+            color_map.sort()
+        else:
+            color_map = k3d.basic_color_maps.Jet
+
+        if attribute:
+            attribute = list(np.array(attribute) / float(max(attribute)))
         mesh = k3d.mesh(vertices=vertices,
                         indices=indices,
                         attribute=attribute,
