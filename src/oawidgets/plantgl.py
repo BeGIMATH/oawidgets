@@ -15,6 +15,11 @@ def tomesh(geometry, d=None):
         d = Tesselator()
 
     geometry.apply(d)
+
+    # Case for Curves or other objects that are not a mesh.
+    if d.discretization is None:
+        return None
+
     idl = [tuple(index) for index in list(d.discretization.indexList)]
     pts = [(pt.x, pt.y, pt.z) for pt in list(d.discretization.pointList)]
     mesh = k3d.mesh(vertices=pts, indices=idl)
@@ -30,6 +35,11 @@ def scene2mesh(scene, property=None):
     offset=0
     for obj in scene:
         obj.geometry.apply(d)
+
+        # Case for Curves or other objects that are not a mesh.
+        if d.discretization is None:
+            continue
+
         idl = np.array([tuple(index) for index in list(d.discretization.indexList)])+offset
         pts = [(pt.x, pt.y, pt.z) for pt in list(d.discretization.pointList)]
 
@@ -42,7 +52,8 @@ def scene2mesh(scene, property=None):
         offset += len(pts)
         attribute.extend([colordict[color]]*len(pts))
         indices.extend(idl.tolist())
-    colors=np.array(colordict.keys())/255.
+
+    colors=np.array(colordict.keys()) / 255.
     if property is not None:
         property = np.repeat(np.array(property), [3]*len(property))
         mesh = k3d.mesh(vertices=vertices, indices=indices, attribute=property, color_map=k3d.basic_color_maps.Jet, color_range=[min(property), max(property)])
@@ -69,8 +80,6 @@ def scene2mesh(scene, property=None):
 def group_meshes_by_color(scene):
     """ Create one mesh by objects sharing the same color.
     """
-    d = Tesselator()
-
     group_color = {}
 
     for obj in scene:
@@ -91,11 +100,13 @@ def PlantGL(pglobject, plot=None, group_by_color=True, property=None):
 
     if isinstance(pglobject, Geometry):
         mesh = tomesh(pglobject)
-        plot += mesh
+        if mesh:
+            plot += mesh
     elif isinstance(pglobject, Shape):
         mesh = tomesh(pglobject.geometry)
-        mesh.color = pglobject.appearance.ambient.toUint()
-        plot += mesh
+        if mesh:
+            mesh.color = pglobject.appearance.ambient.toUint()
+            plot += mesh
     elif isinstance(pglobject, Scene):
         if group_by_color:
             meshes = group_meshes_by_color(pglobject)
@@ -103,7 +114,8 @@ def PlantGL(pglobject, plot=None, group_by_color=True, property=None):
                 plot += mesh
         else:
             mesh = scene2mesh(pglobject, property)
-            plot += mesh
+            if mesh:
+                plot += mesh
 
     plot.lighting = 3
     #plot.colorbar_object_id = randint(0, 1000)
@@ -119,7 +131,12 @@ def mtg2mesh(g, property_name):
     offset = 0
     for vid, geom in geometry.iteritems():
         if vid in prop:
-	    geom.apply(d)
+            geom.apply(d)
+
+            # Case for Curves or other objects that are not a mesh.
+            if d.discretization is None:
+                continue
+
             idl = np.array([tuple(index) for index in list(d.discretization.indexList)])+offset
             pts = [(pt.x, pt.y, pt.z) for pt in list(d.discretization.pointList)]
             vertices.extend(pts)
@@ -129,9 +146,9 @@ def mtg2mesh(g, property_name):
         #else:
         #    attr.extend([0]*len(pts))
     mesh = k3d.mesh(vertices=vertices,
-                        indices=indices,
-                        attribute=attr,
-                        color_map=k3d.basic_color_maps.Jet)
+                    indices=indices,
+                    attribute=attr,
+                    color_map=k3d.basic_color_maps.Jet)
     return mesh
 
 
