@@ -2,6 +2,7 @@
 
 3D visualisation widgets in Jupyter.
 """
+from builtins import zip
 from openalea.plantgl.all import *
 from random import randint
 import matplotlib
@@ -42,7 +43,7 @@ def scene2mesh(scene, property=None):
         offset += len(pts)
         attribute.extend([colordict[color]]*len(pts))
         indices.extend(idl.tolist())
-    colors=np.array(colordict.keys())/255.
+    colors=np.array(list(colordict.keys()))/255.
     if property is not None:
         property = np.repeat(np.array(property), [3]*len(property))
         mesh = k3d.mesh(vertices=vertices, indices=indices, attribute=property, color_map=k3d.basic_color_maps.Jet, color_range=[min(property), max(property)])
@@ -51,11 +52,11 @@ def scene2mesh(scene, property=None):
         mesh = k3d.mesh(vertices=vertices, indices=indices)
         mesh.color=colorhex
     else:
-        color_map = zip(list(np.array(colordict.values()) /
+        color_map = list(zip(list(np.array(list(colordict.values())) /
                              float(max(colordict.values()))),
                         colors[:,0],
                         colors[:,1],
-                        colors[:,2])
+                        colors[:,2]))
         color_map.sort()
         #color_map=k3d.basic_color_maps.Jet
         attribute = list(np.array(attribute)/float(max(attribute)))
@@ -80,7 +81,7 @@ def group_meshes_by_color(scene):
         group_color.setdefault(color, []).append(obj)
 
 
-    meshes = [scene2mesh(objects) for objects in group_color.values()]
+    meshes = [scene2mesh(objects) for objects in list(group_color.values())]
     return meshes
 
 
@@ -117,9 +118,9 @@ def mtg2mesh(g, property_name):
     prop = g.property(property_name)
     vertices, indices, attr = [], [], []
     offset = 0
-    for vid, geom in geometry.iteritems():
+    for vid, geom in geometry.items():
         if vid in prop:
-	    geom.apply(d)
+            geom.apply(d)
             idl = np.array([tuple(index) for index in list(d.discretization.indexList)])+offset
             pts = [(pt.x, pt.y, pt.z) for pt in list(d.discretization.pointList)]
             vertices.extend(pts)

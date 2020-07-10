@@ -5,10 +5,13 @@ try:
 except ImportError:
     cc = None
 
+from future.builtins import next
+from future.builtins import object
+import random
 def dict2html(args, properties=None):
     """Return a HTML element from a dictionary"""
     if properties is None:
-        selection = ['index', 'parent', 'complex', 'label', 'edge_type', 'scale']
+        selection = ['index', 'parent', 'complex', 'label', 'edge_type', 'scale', 'color']
         properties =  []
         for k in args:
             if k not in selection:
@@ -19,7 +22,7 @@ def dict2html(args, properties=None):
     return '<br>'.join(['%s %s'%(k, args[k]) for k in properties])
 
 
-def plot(g, properties=None, selection=None, hlayout=True, scale=None, labels=None, **kwds):
+def plot(g, properties=None, selection=None, hlayout=True, scale=None,clusters=None, labels=None, **kwds):
     """Plot a MTG in the Jupyter Notebook"""
     G = Network(notebook=True, directed=True,
                 layout=hlayout,
@@ -34,7 +37,7 @@ def plot(g, properties=None, selection=None, hlayout=True, scale=None, labels=No
     	G.repulsion()
 
     if scale is None:
-	scale = g.max_scale()
+	    scale = g.max_scale()
 
     #Colors
     if cc is not None:
@@ -50,7 +53,7 @@ def plot(g, properties=None, selection=None, hlayout=True, scale=None, labels=No
 
     #Level determination
     levels = {}
-    root = g.component_roots_at_scale_iter(g.root, scale=scale).next()
+    root = next(g.component_roots_at_scale_iter(g.root, scale=scale))
     for vid in traversal.pre_order(g, root):
         levels[vid] = 0 if g.parent(vid) is None else levels[g.parent(vid)]+1
 
@@ -77,27 +80,125 @@ def plot(g, properties=None, selection=None, hlayout=True, scale=None, labels=No
     #Nodes adding
     for vid in vids:
         shape = 'box' if vid in component_roots else 'circle'
-	if labels is None:
+        if labels is None:
             label_node = g.label(vid)
-	else:
-	    label_node = labels[vid]
+        else:
+            label_node = labels[vid]
         level = levels[vid]
         if selection is None:
-	    color = groups[g.complex(vid)]
-	else:
-	    color = '#fb7e81' if vid in selection else '#97c2fc'
+	        color = groups[g.complex(vid)]
+        else:
+	        color = '#fb7e81' if vid in selection else '#97c2fc'
         title = dict2html(g[vid], properties=properties)
         #gap, mult = max(pos[1])-min(pos[1]), 20
         #x = mult*pos[g.parent(vid)][0] if g.parent(vid) else pos[vid][0]
-	#y = mult*(gap - pos[vid][1]) #if g.parent(vid) else None
-	#physics = False if ('edge_type' not in g[vid] or g[vid]['edge_type']=='<' or g.nb_children(vid)>0) else True
+	    #y = mult*(gap - pos[vid][1]) #if g.parent(vid) else None
+	    #physics = False if ('edge_type' not in g[vid] or g[vid]['edge_type']=='<' or g.nb_children(vid)>0) else True
         G.add_node(vid, shape=shape,
                    label=label_node,
                    level=level,
                    color=color,
-		   title=title,
+                   title=title,
                    borderWidth=3,
-		   #x=x,
+		           #x=x,
+                   #y=y,
+                   #physics=physics,
+                   )
+
+    #Cluster
+    if False:
+        for vid in traversal.pre_order(g, g.complex(root)):
+            G.add_node(vid, hidden=True)
+            if g.parent(vid):
+                G.add_edge(g.parent(vid), vid, hidden=True)
+            for cid in g.components(vid):
+                G.add_edge(vid, cid, hidden=True)
+
+    #Edges adding
+    for edge in edges:
+        label_edge = g.edge_type(edge[1])
+        G.add_edge(edge[0], edge[1], label=label_edge, width=edge[2])
+
+    return G.show('mtg.html')
+
+
+def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,cluster=None, labels=None, **kwds):
+    """Plot a MTG in the Jupyter Notebook"""
+    G = Network(notebook=True, directed=True,
+                layout=hlayout,
+                height='800px', width='900px')
+
+    if hlayout:
+        G.hrepulsion()
+        G.options.layout.hierarchical.direction='DU'
+        G.options.layout.hierarchical.parentCentralization=True
+        G.options.layout.hierarchical.levelSeparation=150
+    else:
+    	G.repulsion()
+
+    if scale is None:
+	    scale = g.max_scale()
+
+    #Colors
+    
+    number_of_colors = len(cluster)
+
+    colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
+    
+    
+    #Data
+    vids = g.vertices(scale=scale)
+    edges = [(g.parent(vid), vid, 6 if g.edge_type(vid) == '<' else 1)
+             for vid in vids if g.parent(vid) is not None]#, 'black' if g.edge_type(vid) == '<' else None
+    pos = g.property('position')
+
+    #Level determination
+    levels = {}
+    root = next(g.component_roots_at_scale_iter(g.root, scale=scale))
+    for vid in traversal.pre_order(g, root):
+        levels[vid] = 0 if g.parent(vid) is None else levels[g.parent(vid)]+1
+
+    #Component roots
+    component_roots = {}
+    component_roots[root] = True
+    for vid in traversal.pre_order(g, root):
+        pid = g.parent(vid)
+        if pid is None:
+            component_roots[vid] = True
+        elif g.complex(pid) != g.complex(vid):
+            component_roots[vid] = True
+
+    #Groups
+    groups = g.property('color')
+    for i in range(len(cluster)):
+        for j in cluster[i]:
+            groups[j] = colors[i]
+  
+
+    #Nodes adding
+    for vid in vids:
+        shape = 'box' if vid in component_roots else 'circle'
+        if labels is None:
+            label_node = g.label(vid)
+        else:
+            label_node = labels[vid]
+        level = levels[vid]
+        if selection is None:
+	        color = groups[vid]
+        else:
+	        color = '#fb7e81' if vid in selection else '#97c2fc'
+        title = dict2html(g[vid], properties=properties)
+        #gap, mult = max(pos[1])-min(pos[1]), 20
+        #x = mult*pos[g.parent(vid)][0] if g.parent(vid) else pos[vid][0]
+	    #y = mult*(gap - pos[vid][1]) #if g.parent(vid) else None
+	    #physics = False if ('edge_type' not in g[vid] or g[vid]['edge_type']=='<' or g.nb_children(vid)>0) else True
+        G.add_node(vid, shape=shape,
+                   label=label_node,
+                   level=level,
+                   color=color,
+                   title=title,
+                   borderWidth=3,
+		           #x=x,
                    #y=y,
                    #physics=physics,
                    )

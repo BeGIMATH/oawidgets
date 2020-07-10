@@ -28,6 +28,7 @@ Usage
 
 
 """
+from __future__ import print_function
 
 #-----------------------------------------------------------------------------
 #  Copyright (C) 2013-2019 Christophe Pradal
@@ -315,7 +316,7 @@ class LpyMagics(Magics):
         if len(parameters) > 0:
             self._lsys.context().updateNamespace(parameters)
 
-        print 'DEBUG: ', workstring, c_iter, n
+        print('DEBUG: ', workstring, c_iter, n)
         tree = self._lsys.iterate(workstring,c_iter,n)
 
         if args.axialtree:
