@@ -1,5 +1,6 @@
 from openalea.mtg import traversal
 from pyvis.network import Network
+
 try:
     import colorcet as cc
 except ImportError:
@@ -8,10 +9,11 @@ except ImportError:
 from future.builtins import next
 from future.builtins import object
 import random
+import numpy as np
 def dict2html(args, properties=None):
     """Return a HTML element from a dictionary"""
     if properties is None:
-        selection = ['index', 'parent', 'complex', 'label', 'edge_type', 'scale', 'color']
+        selection = ['index', 'parent', 'complex', 'label', 'edge_type', 'scale', 'weight']
         properties =  []
         for k in args:
             if k not in selection:
@@ -27,7 +29,7 @@ def plot(g, properties=None, selection=None, hlayout=True, scale=None,clusters=N
     G = Network(notebook=True, directed=True,
                 layout=hlayout,
                 height='800px', width='900px')
-
+    
     if hlayout:
         G.hrepulsion()
         G.options.layout.hierarchical.direction='DU'
@@ -128,13 +130,16 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,c
                 layout=hlayout,
                 height='800px', width='900px')
 
+
+    G.toggle_physics(False)
     if hlayout:
         G.hrepulsion()
         G.options.layout.hierarchical.direction='DU'
         G.options.layout.hierarchical.parentCentralization=True
-        G.options.layout.hierarchical.levelSeparation=150
+        G.options.layout.hierarchical.levelSeparation=200
     else:
-    	G.repulsion()
+        G.repulsion()
+    
 
     if scale is None:
 	    scale = g.max_scale()
@@ -151,7 +156,7 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,c
     edges = [(g.parent(vid), vid, 6 if g.edge_type(vid) == '<' else 1)
              for vid in vids if g.parent(vid) is not None]#, 'black' if g.edge_type(vid) == '<' else None
     pos = g.property('position')
-
+    
     #Level determination
     levels = {}
     root = next(g.component_roots_at_scale_iter(g.root, scale=scale))
@@ -167,14 +172,18 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,c
             component_roots[vid] = True
         elif g.complex(pid) != g.complex(vid):
             component_roots[vid] = True
-
+   
     #Groups
     groups = g.property('color')
     for i in range(len(cluster)):
         for j in cluster[i]:
             groups[j] = colors[i]
   
-
+    weight = np.zeros(len(g))
+    
+    #for v in traversal.post_order(g,root):
+    #weight[v] = 1 + sum([weight[vid] for vid in g.children(v)])
+    
     #Nodes adding
     for vid in vids:
         shape = 'box' if vid in component_roots else 'circle'
@@ -218,3 +227,4 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,c
         G.add_edge(edge[0], edge[1], label=label_edge, width=edge[2])
 
     return G.show('mtg.html')
+
