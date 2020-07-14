@@ -13,7 +13,7 @@ import numpy as np
 def dict2html(args, properties=None):
     """Return a HTML element from a dictionary"""
     if properties is None:
-        selection = ['index', 'parent', 'complex', 'label', 'edge_type', 'scale', 'weight']
+        selection = ['index', 'parent', 'complex', 'label', 'edge_type', 'scale']
         properties =  []
         for k in args:
             if k not in selection:
@@ -126,12 +126,16 @@ def plot(g, properties=None, selection=None, hlayout=True, scale=None,clusters=N
 
 def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,cluster=None, labels=None, **kwds):
     """Plot a MTG in the Jupyter Notebook"""
+     
     G = Network(notebook=True, directed=True,
                 layout=hlayout,
                 height='800px', width='900px')
 
 
     G.toggle_physics(False)
+    G.toggle_drag_nodes(False)
+    G.toggle_stabilization(False)
+    G.show_buttons(True)
     if hlayout:
         G.hrepulsion()
         G.options.layout.hierarchical.direction='DU'
@@ -145,10 +149,13 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,c
 	    scale = g.max_scale()
 
     #Colors
+    if cluster is not None:
+        number_of_colors = len(cluster)
+        colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
     
-    number_of_colors = len(cluster)
+    else:
+        colors = ['#6e6efd', '#fb7e81', '#ad85e4', '#7be141', '#ffff00', '#ffa807', '#eb7df4', '#e6ffe3', '#d2e5ff', '#ffd1d9']
 
-    colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
     
     
     #Data
@@ -179,11 +186,11 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True, scale=None,c
         for j in cluster[i]:
             groups[j] = colors[i]
   
-    weight = np.zeros(len(g))
     
-    #for v in traversal.post_order(g,root):
-    #weight[v] = 1 + sum([weight[vid] for vid in g.children(v)])
-    
+    weight = g.property('weight')
+    for v in traversal.post_order(g,root):
+        weight[v] = 1 + sum([weight[v_id] for v_id in g.children(v)])
+
     #Nodes adding
     for vid in vids:
         shape = 'box' if vid in component_roots else 'circle'
