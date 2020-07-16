@@ -238,7 +238,7 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True,buttons=False
 
     return G.show('mtg.html')
 
-def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=False, scale=None,nb_cluster=None, labels=None, **kwds):
+def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=False, scale=None,nb_clusters=None, labels=None, **kwds):
     """Plot a MTG in the Jupyter Notebook"""
      
     G = Network(notebook=True, directed=True,
@@ -264,8 +264,8 @@ def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=
 	    scale = g.max_scale()
 
     #Colors
-    if nb_cluster is not None:
-        number_of_colors = nb_cluster
+    if nb_clusters is not None:
+        number_of_colors = nb_clusters
         colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
     
     else:
@@ -298,7 +298,7 @@ def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=
     #Groups
     groups = g.property('color')
     cluster = g.property('cluster')
-    for i in range(len(cluster)):
+    for i in range(nb_clusters):
         for j in [k for k,v in cluster.items() if v == i]:
             groups[j] = colors[i]
   
