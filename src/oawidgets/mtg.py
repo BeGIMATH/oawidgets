@@ -361,21 +361,22 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
 
 
     G.toggle_physics(False)
-    G.toggle_drag_nodes(False)
+    G.toggle_drag_nodes(True)
     G.toggle_stabilization(False)
     if buttons:
         G.show_buttons(True)
+    """
     if hlayout:
         G.hrepulsion()
         G.options.layout.hierarchical.direction='DU'
-        G.options.layout.hierarchical.parentCentralization=True
-        G.options.layout.hierarchical.levelSeparation=200
+        G.options.layout.hierarchical.parentCentralization=False
+        G.options.layout.hierarchical.levelSeparation=300
     else:
-        G.repulsion()
+    """    
+    G.repulsion()
     
 
-    if scale is None:
-	    scale = g.max_scale()
+  
 
     #Colors
     if nb_cluster is not None:
@@ -386,24 +387,20 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
         colors = ['#6e6efd', '#fb7e81', '#ad85e4', '#7be141', '#ffff00', '#ffa807', '#eb7df4', '#e6ffe3', '#d2e5ff', '#ffd1d9']
 
     
-    
     #Data
     sub_tree = g.property('sub_tree')
     c_luster = g.property('cluster')
     g.insert_scale(g.max_scale(), lambda vid: g.property('sub_tree').get(vid,False) != False)
     vids = [i for i in range(nb_cluster)]
-    edges = [cluster[vid], cluster[g.parent(vid)], 6 if cluster[vid] != cluster[g.parent(vid)] else 1)
-             for vid in vids ]#, 'black' if g.edge_type(vid) == '<' else None
-    
+    edges = [(c_luster[g.parent(g.component_roots(vid)[0])],c_luster[g.component_roots(vid)[0]],6) for vid in g.vertices(scale=1) if g.parent(vid) is not None]
+    #edges = [(c_luster[list(g.component_roots(vid))[0]], c_luster[g.parent(list(g.component_roots(vid)))[0]], 6 )
+    #         for vid in g.vertices(scale=g.max_scale()-1) if g.parent(vid) is not None ]#, 'black' if g.edge_type(vid) == '<' else None
     pos = g.property('position')
     
     #Level determination
-    levels = {}
-    root = next(g.component_roots_at_scale_iter(g.root, scale=g.max_scale()-1))
-    for vid in traversal.pre_order(g, root):
-        levels[vid] = 0 if g.parent(vid) is None else levels[g.parent(vid)]+1
-
-   """
+    
+   
+    """
     #Component roots
     component_roots = {}
     component_roots[root] = True
@@ -413,20 +410,14 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
             component_roots[vid] = True
         elif g.complex(pid) != g.complex(vid):
             component_roots[vid] = True
-   """
+    """
 
-    weight = g.property('weight')
-    for v in traversal.post_order(g,root):
-        weight[v] = 1 + sum([weight[v_id] for v_id in g.children(v)])
+   
 
     #Nodes adding
     for vid in vids:
-        shape = 'box' if vid in component_roots else 'circle'
-        if labels is None:
-            label_node = g.label(vid)
-        else:
-            label_node = labels[vid]
-        level = levels[vid]
+        shape = 'circle' 
+       
         if selection is None:
 	        color = colors[vid]
         else:
@@ -437,8 +428,7 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
 	    #y = mult*(gap - pos[vid][1]) #if g.parent(vid) else None
 	    #physics = False if ('edge_type' not in g[vid] or g[vid]['edge_type']=='<' or g.nb_children(vid)>0) else True
         G.add_node(vid, shape=shape,
-                   label=label_node,
-                   level=level,
+                   #level=level,
                    color=color,
                    title=title,
                    borderWidth=3,
