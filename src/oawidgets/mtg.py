@@ -356,7 +356,7 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
     """Plot a MTG in the Jupyter Notebook"""
      
     G = Network(notebook=True, directed=True,
-                layout=hlayout,
+                layout=False,
                 height='800px', width='900px')
 
 
@@ -364,7 +364,7 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
     G.toggle_drag_nodes(True)
     G.toggle_stabilization(False)
     if buttons:
-        G.show_buttons(True)
+        G.show_buttons(False)
     """
     if hlayout:
         G.hrepulsion()
@@ -372,7 +372,7 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
         G.options.layout.hierarchical.parentCentralization=False
         G.options.layout.hierarchical.levelSeparation=300
     else:
-    """    
+    """
     G.repulsion()
     
 
@@ -390,16 +390,12 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
     #Data
     sub_tree = g.property('sub_tree')
     c_luster = g.property('cluster')
-    g.insert_scale(g.max_scale(), lambda vid: g.property('sub_tree').get(vid,False) != False)
+    g.insert_scale(g.max_scale(), lambda vid: g.property('sub_tree').get(vid,None) != None)
     vids = [i for i in range(nb_cluster)]
     edges = [(c_luster[g.parent(g.component_roots(vid)[0])],c_luster[g.component_roots(vid)[0]],6) for vid in g.vertices(scale=1) if g.parent(vid) is not None]
-    #edges = [(c_luster[list(g.component_roots(vid))[0]], c_luster[g.parent(list(g.component_roots(vid)))[0]], 6 )
-    #         for vid in g.vertices(scale=g.max_scale()-1) if g.parent(vid) is not None ]#, 'black' if g.edge_type(vid) == '<' else None
     pos = g.property('position')
     
     #Level determination
-    
-   
     """
     #Component roots
     component_roots = {}
@@ -439,7 +435,9 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
 
     #Edges adding
     for edge in edges:
-        label_edge = g.edge_type(edge[1])
-        G.add_edge(edge[0], edge[1], label=label_edge, width=edge[2])
 
+        G.add_edge(edge[0], edge[1], label=" ", width=edge[2])
+    
+
+    g.remove_scale(g.max_scale()-1)
     return G.show('mtg.html')
