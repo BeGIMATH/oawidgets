@@ -238,7 +238,7 @@ def plot_clusters(g, properties=None, selection=None, hlayout=True,buttons=False
 
     return G.show('mtg.html')
 
-def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=False, scale=None,nb_clusters=None, labels=None, **kwds):
+def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=False, scale=None,nb_cluster=None, labels=None,file_name = None, **kwds):
     """Plot a MTG in the Jupyter Notebook"""
      
     G = Network(notebook=True, directed=True,
@@ -264,8 +264,8 @@ def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=
 	    scale = g.max_scale()
 
     #Colors
-    if nb_clusters is not None:
-        number_of_colors = nb_clusters
+    if nb_cluster is not None:
+        number_of_colors = nb_cluster
         colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
     
     else:
@@ -298,7 +298,7 @@ def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=
     #Groups
     groups = g.property('color')
     cluster = g.property('cluster')
-    for i in range(nb_clusters):
+    for i in range(nb_cluster):
         for j in [k for k,v in cluster.items() if v == i]:
             groups[j] = colors[i]
   
@@ -348,11 +348,12 @@ def plot_clusters_dict(g, properties=None, selection=None, hlayout=True,buttons=
     for edge in edges:
         label_edge = g.edge_type(edge[1])
         G.add_edge(edge[0], edge[1], label=label_edge, width=edge[2])
+    if file_name == None:
+        return G.show('mtg.html')
+    else:
+        return G.show('../data/plots/' + file_name + '.html')
 
-    return G.show('mtg.html')
-
-
-def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,buttons=False, scale=None,nb_cluster=None, labels=None, **kwds):
+def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,buttons=False, scale=None,nb_cluster=None,file_name = None, labels=None, **kwds):
     """Plot a MTG in the Jupyter Notebook"""
      
     G = Network(notebook=True, directed=True,
@@ -440,4 +441,7 @@ def plot_clusters_dependecy(g, properties=None, selection=None, hlayout=True,but
     
 
     g.remove_scale(g.max_scale()-1)
-    return G.show('mtg.html')
+    if file_name == None:
+        return G.show('mtg.html')
+    else:
+        return G.show('../data/plots/' + file_name + '.html')
